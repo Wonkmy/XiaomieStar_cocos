@@ -197,19 +197,19 @@
     "_enabled": true,
     "spf_block": [
       {
-        "__uuid__": "0f7f9109-7960-4856-ae7d-34e89f1facd4"
+        "__uuid__": "eacfd96e-5dcf-4805-b115-d394f2aa2b63"
       },
       {
-        "__uuid__": "6780d73c-1acb-468b-9c9b-47f4f3496a13"
+        "__uuid__": "41b039a6-68f5-4633-9d53-7e66b7246c80"
       },
       {
-        "__uuid__": "eca30855-3bde-4c2e-bad1-bad95295c547"
+        "__uuid__": "2b6561c2-f0f7-4b95-b7c9-b5bd994277b9"
       },
       {
-        "__uuid__": "4dfc13b9-8d33-4a8d-89c5-3827c734eb73"
+        "__uuid__": "1db29653-6d28-4580-a022-ab9aa7a98925"
       },
       {
-        "__uuid__": "5bed992b-a766-4d2f-8b3c-c868424863db"
+        "__uuid__": "6b0a5259-3cb3-4a4e-9556-cc803f36b7a2"
       }
     ],
     "node_xiaoChu": {
@@ -233,7 +233,7 @@
     "_srcBlendFactor": 770,
     "_dstBlendFactor": 771,
     "_spriteFrame": {
-      "__uuid__": "6780d73c-1acb-468b-9c9b-47f4f3496a13"
+      "__uuid__": "1db29653-6d28-4580-a022-ab9aa7a98925"
     },
     "_type": 0,
     "_sizeMode": 0,

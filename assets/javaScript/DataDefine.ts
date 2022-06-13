@@ -8,25 +8,18 @@
 const {ccclass, property} = cc._decorator;
 
 @ccclass
-export default class NewClass extends cc.Component {
+export default class DataDefine extends cc.Component {
 
-    @property(cc.Label)
-    label: cc.Label = null;
+    public static curAddMoneyNumber = 0;
 
-    @property
-    text: string = 'hello';
-
-    pro:cc.Slider
-
-    // LIFE-CYCLE CALLBACKS:
-
-    // onLoad () {}
+    public static curCrossedLevelNumber=0;
 
     
 
-    start () {
-       
+    protected onLoad(): void {
     }
+}
 
-    // update (dt) {}
+class TaskInfo {
+    
 }

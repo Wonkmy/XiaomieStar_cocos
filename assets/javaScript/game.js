@@ -1,4 +1,5 @@
-
+import DataDefine from "./DataDefine";
+import GameManager from "./GameManager"
 cc.Class({
     extends: cc.Component,
 
@@ -91,14 +92,80 @@ cc.Class({
             type:cc.Node,
             default:null
         },
-        gameMapVerticalOffset:cc.Number
+        watchVideoBtn:{
+            type:cc.Node,
+            default:null
+        },
+        gotoNextLevelBtn:{
+            type:cc.Node,
+            default:null
+        },
+        smallRedPackPrefab:{
+            type:cc.Prefab,
+            default:null
+        },
+        tixianMoneyNumLabel:{
+            type:cc.Label,
+            default:null
+        },
+        layer_Task:{
+            type:cc.Node,
+            default:null
+        },
+        layer_Tixian:{
+            type:cc.Node,
+            default:null
+        },
+        gameMapVerticalOffset:cc.Number,
+        gm:GameManager
+    },
+
+    generatorSomeRedpack(){
+        let num = this.myrandom(8,15);
+        let redList = [];
+        for (let i = 0; i < num; i++) {
+            let newRp = cc.instantiate(this.smallRedPackPrefab);
+            newRp.setParent(cc.find("Canvas"));
+            redList.push(newRp);
+            cc.tween(newRp)
+            .by(0.3,{position:new cc.Vec3(this.myrandom(-180,200),this.myrandom(-200,140))})
+            .start()
+        }
+
+        this.scheduleOnce(function(){ 
+            let smallRPWorldPos = cc.find("Canvas/layerGame/Tixian/smallRP").parent.convertToWorldSpaceAR(cc.find("Canvas/layerGame/Tixian/smallRP").position);
+
+            let needFlyPos = cc.find("Canvas").convertToNodeSpaceAR(smallRPWorldPos);
+             for (let i = 0; i < redList.length; i++) {
+                cc.tween(redList[i])
+                .to(i/8,{position:needFlyPos})
+                .call(()=>{
+                    redList[i].destroy();
+                })
+                .start()
+             }
+        },0.6);
+
+        this.scheduleOnce(function(){
+            let saveMoneyNum = cc.sys.localStorage.getItem("userMoney");
+            if (saveMoneyNum != null) {
+                let saveData = JSON.parse(saveMoneyNum);
+                let newMoney = Math.floor(saveData.money*100)/100
+                this.tixianMoneyNumLabel.string = String(newMoney) + "元";
+            }
+        },num/8);
     },
 
     onLoad () {
         // console.log('wx:cocoscreator_666');
         // console.log('QQ:2504549300');
-
-        
+        this.gm=cc.find("Canvas").getComponent(GameManager);
+        let crossLevel = cc.sys.localStorage.getItem("curCrossedLevel");
+        // if(crossLevel!=null){
+        //     DataDefine.curCrossedLevelNumber=parseInt(JSON.parse(crossLevel));
+        // }else{
+             DataDefine.curCrossedLevelNumber=0;
+        // }
 
         if(cc.xiaobai == null){
             cc.xiaobai = {}
@@ -114,7 +181,8 @@ cc.Class({
         .start()
         this.gameStart=false;
         this.agreeYinsi=false;
-        //window.game = this
+        this.redPack=cc.find("Canvas/layerRedpackPanel");
+        window.game = this
         let agreeYinsied=cc.sys.localStorage.getItem("agree");
         if(agreeYinsied=="1"){
             this.agreeYinsi=true;
@@ -134,8 +202,8 @@ cc.Class({
         this.time_tiShi = 0 //用于提示计时
         this.num_block_wh = 64
         this.num_jianGe = 0//2
-        this.num_w = 11 //宽
-        this.num_h = 11 //高
+        this.num_w = 10 //宽
+        this.num_h = 10 //高
         this.gameType = 0//0:游戏开始前 1：正在游戏中  2：游戏结束
         this.numLevel = 1 //第几关
         this.numScore_curr = 0 //当前分数
@@ -158,11 +226,26 @@ cc.Class({
             cc.game.end();
         },this)
 
+        //红包界面上的下一关按钮
+        this.gotoNextLevelBtn.on(cc.Node.EventType.TOUCH_START,()=>{
+                this.redPack.active=false;
+                this.generatorSomeRedpack();
+                this.actGameOver()
+        },this)
+
 
         this.node_scoreCurr = this.layerGame.getChildByName('label_scoreCurr')
         this.node_lianXiao = this.layerGame.getChildByName('label_lianXiao')
         this.node_good = this.layerGame.getChildByName('node_good')
         this.node_success = this.layerGame.getChildByName('node_success')
+
+
+        let saveMoneyNum = cc.sys.localStorage.getItem("userMoney");
+        if(saveMoneyNum!=null){
+            let saveData = JSON.parse(saveMoneyNum);
+            this.tixianMoneyNumLabel.string=String(saveData.money)+"元";
+        }
+        
 
          //声明二维数组
          this.arr_blocks = []
@@ -187,11 +270,10 @@ cc.Class({
             console.log('宽：'+fbl_sheBei.width + ' 高：'+fbl_sheBei.height);
 
             var f_scale = fbl_sheBei.width / 720.0
-            this.block_parent.scale = f_scale * 720.0 / this.block_parent.width
+            this.block_parent.scale = (f_scale * 720.0 / this.block_parent.width)*0.925
             this.xingXing_parent.scale = f_scale * 720.0 / this.block_parent.width
             this.bg_btn_biShu.scale = f_scale
         }
-        
     },
 
     //刷新最高分数
@@ -210,6 +292,9 @@ cc.Class({
         this.xingXing_parent.width = this.block_parent.width
         this.xingXing_parent.height = this.block_parent.height
         this.xingXing_parent.y = this.block_parent.y
+        cc.find("Canvas/layerGame/diban").y=this.block_parent.y
+
+       
     },
 
     //屏幕触摸
@@ -380,7 +465,7 @@ cc.Class({
         this.gameType = 0
         this.is_moveing = false //元素块是否在移动中
         
-        this.layerGame.getChildByName('btn_zanTing').active = true
+        cc.find("Canvas/layerGame/Tixian/btn_zanTing").active = true
         this.node_success.active = false
         this.node_good.opacity = 0
         this.node_lianXiao.opacity = 0
@@ -414,12 +499,12 @@ cc.Class({
         }
 
         node_guanQia.getComponent(cc.Label).string = this.numLevel
-        node_guanQia_2.getComponent(cc.Label).string = '关卡 ' + this.numLevel
+        node_guanQia_2.getComponent(cc.Label).string = this.numLevel
         // node_muBiao.getComponent(cc.Label).string = '目标：' + this.arrMuBiao[this.numLevel]
         // node_muBiao_2.getComponent(cc.Label).string = '目标分数 ' + this.arrMuBiao[this.numLevel]
 
         node_muBiao.getComponent(cc.Label).string = this.getNextLevelTargetScore()
-        node_muBiao_2.getComponent(cc.Label).string = '目标分数 ' + this.getNextLevelTargetScore()
+        node_muBiao_2.getComponent(cc.Label).string = this.getNextLevelTargetScore()
 
         this.node_scoreCurr.getComponent(cc.Label).string = this.numScore_curr
 
@@ -451,7 +536,7 @@ cc.Class({
 
         {
             var act_1 = cc.delayTime(0.5)
-            var act_2 = cc.moveTo(0.5,0,node_muBiao_2.y).easing(cc.easeCubicActionOut())//越来越慢
+            var act_2 = cc.moveTo(0.5,48,node_muBiao_2.y).easing(cc.easeCubicActionOut())//越来越慢
             var act_3 = cc.delayTime(1)
             var act_4 = cc.moveTo(0.3,-528,node_muBiao_2.y)
             var end = cc.sequence(act_1,act_2,act_3,act_4)
@@ -653,7 +738,7 @@ cc.Class({
 
         var f_qiShi_x = -this.block_parent.width/2 +  this.num_block_wh/2 +  this.num_jianGe
         var f_qiShi_y = -this.block_parent.height/2 +  this.num_block_wh/2 +  this.num_jianGe
-
+        
         for (let i = 0; i < this.num_h; i++) {//高
             for (let j = 0; j < this.num_w; j++) {//宽
                 var block = cc.instantiate(this.prefab_block) //实例化
@@ -661,7 +746,7 @@ cc.Class({
                 block.x = (this.num_block_wh+this.num_jianGe)*j + f_qiShi_x
                 block.y = (this.num_block_wh+this.num_jianGe)*i + f_qiShi_y
                 var js_block = block.getComponent('block')
-                var i_random = Math.floor(Math.random()*2) //0-4
+                var i_random = Math.floor(Math.random()*2) //0-1 0-2 0-3 0-4 1-2 1-3  1-4 2-3 2-4 3-4 4-5
                 js_block.init(i_random)
 
                 // if (i==9 && j==9) {
@@ -670,6 +755,10 @@ cc.Class({
                 // }
             }
         }
+    },
+
+    myrandom:function(lower, upper) {
+        return Math.floor(Math.random() * (upper - lower)) + lower;
     },
 
     //通过本地数据来创建元素块
@@ -772,7 +861,7 @@ cc.Class({
             
         }
 
-        var f_time_big = 1.5 + 0.03*(children.length-1)
+        var f_time_big = 0.5 + 0.03*(children.length-1)
 
         if (this.node_success.active) {
             this.numLevel++
@@ -788,7 +877,7 @@ cc.Class({
                 this.userData.num_score_save = 0
                 this.saveUserData()
                 this.layerFaild.active = true
-                this.layerGame.getChildByName('btn_zanTing').active = false
+                cc.find("Canvas/layerGame/Tixian/btn_zanTing").active = false
             },f_time_big+1)
         }
         
@@ -890,8 +979,23 @@ cc.Class({
                 this.gameType = 2
                 this.userData.arr_blocks_save = []
                 this.saveUserData()
-                console.log('游戏结束');
-                this.actGameOver()
+                console.log('游戏结束，准备弹出一个红包');
+                cc.game.emit("finishLevel");
+                DataDefine.curCrossedLevelNumber++;
+                cc.sys.localStorage.setItem("curCrossedLevel",JSON.stringify(DataDefine.curCrossedLevelNumber));
+                for (let i = 0; i < this.gm.TASKCONFIG; i++) {
+                    this.gm.TASKCONFIG[i].crossLevelNum=DataDefine.curCrossedLevelNumber;
+                }
+
+                let taskConfigJsonStr = JSON.stringify(this.gm.TASKCONFIG);
+                cc.sys.localStorage.setItem("taskConfig",taskConfigJsonStr);
+
+
+                this.redPack.active=true;
+                this.redPack.children[2].scale=0;
+                cc.tween(this.redPack.children[2])
+                    .to(0.35,{scale:1},{easing:'elasticOut'})
+                    .start()
             }else{
                 console.log('没结束');
             }
@@ -968,17 +1072,17 @@ cc.Class({
            this.layerReady.active = false
            this.layerGame.active = true
            this.actStart()
-           if (cc.sys.os == cc.sys.OS_ANDROID) {
-                jsb.reflection.callStaticMethod("org/cocos2dx/javascript/AppActivity", "showBanner", "()V");
-            }
+        //    if (cc.sys.os == cc.sys.OS_ANDROID) {
+        //         jsb.reflection.callStaticMethod("org/cocos2dx/javascript/AppActivity", "showBanner", "()V");
+        //     }
        }else if (str == 'btn_zanTing') {
             if (this.gameType != 1) {
                 return
             }
             this.layerZanTing.active = true
-            if (cc.sys.os == cc.sys.OS_ANDROID) {
-                jsb.reflection.callStaticMethod("org/cocos2dx/javascript/AppActivity", "showChaPing", "()V");
-            }
+            // if (cc.sys.os == cc.sys.OS_ANDROID) {
+            //     jsb.reflection.callStaticMethod("org/cocos2dx/javascript/AppActivity", "showChaPing", "()V");
+            // }
        }else if (str == 'btn_home') {
             this.layerReady.active = true
             this.layerGame.active = false
@@ -1004,12 +1108,12 @@ cc.Class({
             if (this.tx_biShua.active || this.tx_chuiZi.active) {
                 return
             }
-            if (cc.sys.os == cc.sys.OS_ANDROID) {
-                jsb.reflection.callStaticMethod("org/cocos2dx/javascript/AppActivity", "showShiPin", "()V");
-            }else{
+            // if (cc.sys.os == cc.sys.OS_ANDROID) {
+            //     jsb.reflection.callStaticMethod("org/cocos2dx/javascript/AppActivity", "showShiPin", "()V");
+            // }else{
                 this.quXiaoTiShi()
                 this.shuaXinBlocks()
-            }
+            // }
        }else if (str == 'btn_chuiZI') {//锤子
             if (this.gameType != 1) {
                 return
@@ -1083,12 +1187,32 @@ cc.Class({
         }else if (str == 'BGM_btn_off') {
              this.bgm_is_sound = true
              this.shuaXinBGMBtn()
+         }else if(str=='task'){
+            this.layer_Task.active=true;
+            this.layer_Task.children[2].scale=0;
+            cc.tween(this.layer_Task.children[2])
+                .to(0.2,{scale:0.8},{easing:'backOut'}).start()
          }
+         else if(str=='tixian'){
+            this.layer_Tixian.active=true;
+            this.layer_Tixian.children[1].scale=0;
+            cc.tween(this.layer_Tixian.children[1])
+                .to(0.2,{scale:1},{easing:'backOut'}).start()
+         }else if (str == 'btn_close_task') {
+            this.layer_Task.active = false
+       }else if (str == 'btn_close_tixian') {
+        cc.tween(this.layer_Tixian.children[1])
+                .to(0.2,{scale:0},{easing:'backIn'})
+                .call(()=>{
+                    this.layer_Tixian.active = false
+                })
+                .start()
+        }
     },
 
     shuaXinBGMBtn:function(){
-        var btn_on = this.layerZanTing.getChildByName('bg').getChildByName('bg_1').getChildByName('sp_yinXiao_bg').getChildByName('btn_on_bgm')
-        var btn_off = this.layerZanTing.getChildByName('bg').getChildByName('bg_1').getChildByName('sp_yinXiao_bg').getChildByName('btn_off_bgm')
+        var btn_on = cc.find("Canvas/layerZanTing/bg/frame/sliderArea/taskScroll/view/content/music/btn_on_bgm");
+        var btn_off = cc.find("Canvas/layerZanTing/bg/frame/sliderArea/taskScroll/view/content/music/btn_off_bgm");
 
         if (this.bgm_is_sound) {
             this.bgmNode.active=true;
@@ -1104,8 +1228,8 @@ cc.Class({
 
     //刷新音效按钮
     shuaXinSoundBtn:function(){
-        var btn_on = this.layerZanTing.getChildByName('bg').getChildByName('bg_1').getChildByName('sp_yinXiao_bg').getChildByName('btn_on')
-        var btn_off = this.layerZanTing.getChildByName('bg').getChildByName('bg_1').getChildByName('sp_yinXiao_bg').getChildByName('btn_off')
+        var btn_on = cc.find("Canvas/layerZanTing/bg/frame/sliderArea/taskScroll/view/content/sound/btn_on");
+        var btn_off =cc.find("Canvas/layerZanTing/bg/frame/sliderArea/taskScroll/view/content/sound/btn_off");
 
         if (this.is_sound) {
             btn_on.active = true
@@ -1193,9 +1317,9 @@ cc.Class({
                 this.layerLoading.active=false
                 this.layerGame.active=true
                this.actStart()
-               if (cc.sys.os == cc.sys.OS_ANDROID) {
-                    jsb.reflection.callStaticMethod("org/cocos2dx/javascript/AppActivity", "showBanner", "()V");
-                }
+            //    if (cc.sys.os == cc.sys.OS_ANDROID) {
+            //         jsb.reflection.callStaticMethod("org/cocos2dx/javascript/AppActivity", "showBanner", "()V");
+            //     }
             }
         }
         

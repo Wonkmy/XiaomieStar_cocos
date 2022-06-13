@@ -1,0 +1,23 @@
+{
+    "task1":{
+        "getMoneyValue":"0.5",
+        "crossLevelNum":0,
+        "processValue" :0,
+        "totalProcessValue":10,
+        "isGet":false
+    },
+    "task2":{
+        "getMoneyValue":"0.5",
+        "crossLevelNum":0,
+        "processValue" :0,
+        "totalProcessValue":10,
+        "isGet":false
+    },
+    "task3":{
+        "getMoneyValue":"0.5",
+        "crossLevelNum":0,
+        "processValue" :0,
+        "totalProcessValue":10,
+        "isGet":false
+    }
+}
