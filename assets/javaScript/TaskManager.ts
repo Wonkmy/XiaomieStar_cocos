@@ -27,26 +27,30 @@ export default class TaskManager extends cc.Component {
 
         this.gm=cc.find("Canvas").getComponent(GameManager);
         
-        for (let i = 0; i <this.gm.TASKCONFIG.length; i++) {
+        for (let i = 1; i <this.gm.TASKCONFIG.length; i++) {
             let newTaskCell = cc.instantiate(this.taskCell);
             newTaskCell.setParent(this.scrollContentNode);
-            if(this.saveTaskConfig!=null){
-                let s = JSON.parse(this.saveTaskConfig);
-                newTaskCell.getComponent(TaskCell).init(s[i]);
-            }else{
-                newTaskCell.getComponent(TaskCell).init(this.gm.TASKCONFIG[i]);
+            if(this.scrollContentNode.children[i].getComponent(TaskCell)){
+                if(this.saveTaskConfig!=null){
+                    let s = JSON.parse(this.saveTaskConfig);
+                    newTaskCell.getComponent(TaskCell).init(s[i]);
+                }else{
+                    newTaskCell.getComponent(TaskCell).init(this.gm.TASKCONFIG[i]);
+                }
             }
         }
-        this.scrollContentNode.height=this.scrollContentNode.children[0].height*this.scrollContentNode.childrenCount;
+        this.scrollContentNode.height=this.scrollContentNode.children[0].height*this.scrollContentNode.childrenCount+this.scrollContentNode.childrenCount*4;
     }
 
     protected onEnable(): void {
-        for (let i = 0; i < this.scrollContentNode.childrenCount; i++) {
-            if(this.saveTaskConfig!=null){
-                let s = JSON.parse(this.saveTaskConfig);
-                this.scrollContentNode.children[i].getComponent(TaskCell).init(s[i]);
-            }else{
-                this.scrollContentNode.children[i].getComponent(TaskCell).init(this.gm.TASKCONFIG[i]);
+        for (let i = 1; i < this.scrollContentNode.childrenCount; i++) {
+            if(this.scrollContentNode.children[i].getComponent(TaskCell)){
+                if(this.saveTaskConfig!=null){
+                    let s = JSON.parse(this.saveTaskConfig);
+                    this.scrollContentNode.children[i].getComponent(TaskCell).init(s[i]);
+                }else{
+                    this.scrollContentNode.children[i].getComponent(TaskCell).init(this.gm.TASKCONFIG[i]);
+                }
             }
         }
     }

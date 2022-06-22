@@ -29,7 +29,7 @@ export default class TixianManager extends cc.Component {
     onLoad(){
         this.tipNodeOldHeight=this.tipNode.height;
         this.contentNdoeOldHeight=this.contentNode.height;
-        this.chouJiangNode.active=false;
+        //this.chouJiangNode.active=false;
         for (let i = 0; i < this.fiveBtns.length; i++) {
             this.fiveBtns[i].on(cc.Node.EventType.TOUCH_START,this.selectMoneyValue,this)
         }

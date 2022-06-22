@@ -30,15 +30,15 @@ export default class RedpackPanel extends cc.Component {
 
     protected onEnable(): void {
         if(window.game.numLevel<=20){
-            this.redPackMoneyNum=this.myrandom(3.0,5.0);
+            this.redPackMoneyNum=this.myrandom(3,5);
         }
         else if(window.game.numLevel<=60){
-            this.redPackMoneyNum=this.myrandom(2.0,3.0);
+            this.redPackMoneyNum=this.myrandom(2,3);
         }
         else if(window.game.numLevel<=120){
-            this.redPackMoneyNum=this.myrandom(1.0,2.0);
+            this.redPackMoneyNum=this.myrandom(1,2);
         }else{
-            this.redPackMoneyNum=this.myrandom(0.1,1.0);
+            this.redPackMoneyNum=this.myrandom(0,2);
         }
 
         this.redpackLabel.string="+"+this.redPackMoneyNum.toString()+"元";
@@ -60,9 +60,7 @@ export default class RedpackPanel extends cc.Component {
         cc.sys.localStorage.setItem("userMoney",JSON.stringify(userMoney));
     }
 
-    myrandom(lower:number, upper:number) {
-        let num = Math.random() * (upper - lower) + lower
-        let n = Math.floor(num*100)/100
-        return n;
-    }
+   myrandom(lower:number, upper:number) {
+    return Math.floor(Math.random() * (upper - lower)) + lower;
+   }
 }

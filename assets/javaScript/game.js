@@ -116,8 +116,13 @@ cc.Class({
             type:cc.Node,
             default:null
         },
+        layer_Zhuanpan:{
+            type:cc.Node,
+            default:null
+        },
         gameMapVerticalOffset:cc.Number,
-        gm:GameManager
+        gm:GameManager,
+        canClickStar:false
     },
 
     generatorSomeRedpack(){
@@ -172,6 +177,12 @@ cc.Class({
         }
         cc.xiaobai.game = this
 
+        cc.tween(cc.find("Canvas/layerGame/Tixian/bbtn/tips"))
+        .repeatForever(
+            cc.tween().by(0.4,{position:new cc.Vec3(20,0,0)}).by(0.3,{position:new cc.Vec3(-20,0,0)})
+        )
+        .start()
+
         cc.tween(this.progressBar.node.children[1].children[0])
         .repeatForever(
             cc.tween(this.progressBar.node.children[1].children[0])
@@ -182,10 +193,12 @@ cc.Class({
         this.gameStart=false;
         this.agreeYinsi=false;
         this.redPack=cc.find("Canvas/layerRedpackPanel");
+        this.game_game=this;
         window.game = this
         let agreeYinsied=cc.sys.localStorage.getItem("agree");
         if(agreeYinsied=="1"){
             this.agreeYinsi=true;
+            //如果用户之前已同意隐私政策，则执行微信登录逻辑：已登录：打开loding界面；未登录：显示登录界面
             this.layerLoading.active=true;
         }else{
             this.layerYinsi.active = true
@@ -201,7 +214,7 @@ cc.Class({
 
         this.time_tiShi = 0 //用于提示计时
         this.num_block_wh = 64
-        this.num_jianGe = 0//2
+        this.num_jianGe = 2//2
         this.num_w = 10 //宽
         this.num_h = 10 //高
         this.gameType = 0//0:游戏开始前 1：正在游戏中  2：游戏结束
@@ -215,6 +228,7 @@ cc.Class({
             cc.sys.localStorage.setItem("agree","1");
             this.agreeYinsi=true;
             this.layerYinsi.active=false;
+            //同意隐私政策后显示登录界面
             this.layerLoading.active=true;
         },this)
 
@@ -230,7 +244,16 @@ cc.Class({
         this.gotoNextLevelBtn.on(cc.Node.EventType.TOUCH_START,()=>{
                 this.redPack.active=false;
                 this.generatorSomeRedpack();
-                this.actGameOver()
+
+            this.numLevel++
+            this.userData.num_level_save = this.numLevel
+            this.scheduleOnce(function () {
+                this.userData.num_score_fh = this.numScore_curr
+                this.saveUserData()
+                cc.find("Canvas/zhezhao").active=true;
+                this.actStart()
+            }, 0.5)
+
         },this)
 
 
@@ -267,10 +290,10 @@ cc.Class({
 
         {//设备分辨率
             var fbl_sheBei = cc.director.getWinSizeInPixels()
-            console.log('宽：'+fbl_sheBei.width + ' 高：'+fbl_sheBei.height);
+            //console.log('宽：'+fbl_sheBei.width + ' 高：'+fbl_sheBei.height);
 
             var f_scale = fbl_sheBei.width / 720.0
-            this.block_parent.scale = (f_scale * 720.0 / this.block_parent.width)*0.925
+            this.block_parent.scale = (f_scale * 720.0 / this.block_parent.width)*0.96
             this.xingXing_parent.scale = f_scale * 720.0 / this.block_parent.width
             this.bg_btn_biShu.scale = f_scale
         }
@@ -299,23 +322,31 @@ cc.Class({
 
     //屏幕触摸
     setTouch:function(){
+        
+        
         this.block_parent.on('touchstart', function (event) {
+            if(this.game_game.canClickStar==false)
+            {
+                return
+            }
             if (this.gameType != 1) {
                 return
             }
             if (this.is_moveing) {
                 return
             }
+
+            
             var pos_start_world = event.getLocation()
             var pos_start_node = this.block_parent.convertToNodeSpaceAR(pos_start_world)
-            console.log('pos_start_node:' + pos_start_node);
+            //console.log('pos_start_node:' + pos_start_node);
             
             var children = this.block_parent.children
             for (let i = 0; i < children.length; i++) {
                 var rect_block = children[i].getBoundingBox()
                 if(rect_block.contains(pos_start_node)){
                     
-                    console.log('选中了：' + i);
+                    //console.log('选中了：' + i);
                     this.time_tiShi = 0
                     this.quXiaoTiShi()
                     if (this.tx_chuiZi.active) {//有锤子特效
@@ -326,11 +357,11 @@ cc.Class({
                             this.tx_chuiZi.active = false
                             var pos_block = children[i].getPosition()
                             var blockType = children[i].getComponent('block').blockType
-                            for (let i = 0; i < 3; i++) {
+                            //for (let i = 0; i < 3; i++) {
                                 this.createXing(pos_block,blockType)
-                            }
+                            //}
                             children[i].removeFromParent()
-                            this.shuaXinArr()
+                            //this.shuaXinArr()
                             this.moveBlocks_down()
                             return
                         }
@@ -385,8 +416,10 @@ cc.Class({
                         if(this.is_sound){
                             cc.audioEngine.play(this.audio_sound[1], false, 1);
                         }
-                       
+
+
                         this.xiaoChuBlocks()
+                        
                         {//连消动画
                             this.node_lianXiao.opacity = 255
                             this.node_lianXiao.stopAllActions()
@@ -405,7 +438,12 @@ cc.Class({
                         }
                         if (num_xiaoChuGeShu >= 6) {//good动画
                             if(this.is_sound){
-                                cc.audioEngine.play(this.audio_sound[0], false, 1);
+                                if(this.myrandom(0,10)<3){
+                                    cc.audioEngine.play(this.audio_sound[0], false, 1);
+                                }else{
+                                    cc.audioEngine.play(this.audio_sound[3], false, 1);
+                                }
+                                
                             }
                             this.node_good.opacity = 255
                             this.node_good.stopAllActions()
@@ -498,6 +536,11 @@ cc.Class({
             this.saveUserData()
         }
 
+        //每次开始前都提前生成一些星星存储到内存中
+        // this.generatorTxtStar();
+        if(this.is_sound){
+            cc.audioEngine.play(this.audio_sound[4], false, 1);
+        }
         node_guanQia.getComponent(cc.Label).string = this.numLevel
         node_guanQia_2.getComponent(cc.Label).string = this.numLevel
         // node_muBiao.getComponent(cc.Label).string = '目标：' + this.arrMuBiao[this.numLevel]
@@ -518,6 +561,7 @@ cc.Class({
         if (this.userData.arr_blocks_save.length > 0) {
             this.createBlocksByBenDi()
             this.shuaXinArr()
+            this.game_game.canClickStar=true;
             this.gameType = 1
             this.time_tiShi = 0
             return
@@ -556,10 +600,14 @@ cc.Class({
         }
 
         var f_bigTime = 2.3 + 0.5+0.008*(children.length - 1)
-
         this.scheduleOnce(function(){
             this.gameType = 1
             this.time_tiShi = 0
+            console.log("所有的星星移动结束了");
+            this.scheduleOnce(()=>{
+                cc.find("Canvas/zhezhao").active=false;
+            },0.5);
+            this.game_game.canClickStar=true;
         },f_bigTime+0.02)
 
     },
@@ -648,6 +696,23 @@ cc.Class({
         }
     },
 
+    myrandom:function(lower, upper) {
+     return Math.floor(Math.random() * (upper - lower)) + lower;
+    },
+
+    
+    //游戏开始时先生成100个星星
+    generatorTxtStar(){
+        this.txtStarList=[]
+        for (let i = 0; i < 100; i++) {
+            var block_score = cc.instantiate(this.prefab_blockScore) //实例化
+            block_score.setParent(cc.find("Canvas"))
+            block_score.active=false;
+            block_score.setPosition(0,0,0)
+            this.txtStarList.push(block_score);
+        }
+    },
+
     //消除选中的块
     xiaoChuBlocks:function(){
         var children = this.block_parent.children
@@ -656,20 +721,24 @@ cc.Class({
             var js_block = children[i].getComponent('block')
             if (js_block.is_xiaoChu) {
                 var pos_block = children[i].getPosition()
-                var blockType = children[i].getComponent('block').blockType
-                children[i].removeFromParent()
+                var blockType = children[i].getComponent('block').blockType;
+                
+                 children[i].removeFromParent()
+                //children[i].destroy()
 
-                for (let i = 0; i < 5; i++) {
+                //for (let i = 0; i < 5; i++) {
                     this.createXing(pos_block,blockType)
-                }
+                //}
 
                 num_num++
                 var num_score = 5 + 10 * num_num//加分
-                // var block_score = cc.instantiate(this.prefab_blockScore) //实例化
-                // block_score.parent = this.xingXing_parent
-                // block_score.setPosition(pos_block)
+                let block_score = null;
+                block_score = cc.instantiate(this.prefab_blockScore) //实例化
+                block_score.parent = this.xingXing_parent
+                block_score.scale = 0.8;
+                block_score.setPosition(pos_block)
 
-                var f_time = 0.5+num_num*0.09
+                var f_time = 0.5+num_num*0.04//0.09
 
                 //把cocos1的坐标转成世界坐标pos1 （只能父节点转）
                 var pos1 = this.layerGame.convertToWorldSpaceAR(this.node_scoreCurr.getPosition());
@@ -677,7 +746,7 @@ cc.Class({
                 //把（世界坐标pos1）转成相对于节点cocos1的坐标
                 var pos_end = this.xingXing_parent.convertToNodeSpaceAR(pos1);
 
-                // block_score.getComponent('blockScore').init(num_score,f_time,pos_end)
+                block_score.getComponent('blockScore').init(num_score,f_time,pos_end)
                 this.addScore(num_score)
             }
         }
@@ -724,13 +793,16 @@ cc.Class({
         var f_time = 0.3 + Math.random() * 0.4
 
         var act_0 = cc.delayTime(Math.random()*0.05)
-        var act_1 = cc.moveBy(f_time,0, yy).easing(cc.easeCubicActionOut())//越来越慢
+        //var act_1 = cc.moveBy(f_time,0, yy).easing(cc.easeCubicActionOut())//越来越慢
         var act_2 = cc.moveBy(f_time,0, -yy+10-Math.random() * 40).easing(cc.easeCubicActionIn())//越来越块
         var act_3 = cc.callFunc(function(){
             xing.removeFromParent()
         })
-        var end = cc.sequence(act_0,act_1,act_2,act_3)
-        xing.runAction(end)
+        var end = cc.sequence(act_0,act_3)
+        //xing.runAction(end)
+        this.scheduleOnce(()=>{
+            xing.removeFromParent()
+        },1);
     },
 
     //创建所有的元素块
@@ -755,10 +827,6 @@ cc.Class({
                 // }
             }
         }
-    },
-
-    myrandom:function(lower, upper) {
-        return Math.floor(Math.random() * (upper - lower)) + lower;
     },
 
     //通过本地数据来创建元素块
@@ -804,16 +872,15 @@ cc.Class({
                 this.arr_blocks[i][j] = -1
             }
         }
-
         var children = this.block_parent.children
         for (let i = 0; i < children.length; i++) {
             var type_block = children[i].getComponent('block').blockType
             var pos_block = children[i].getPosition()
             var pos_arr = this.getArrByPos(pos_block)
-
-            this.arr_blocks[pos_arr.x][pos_arr.y] = type_block
+            if(this.arr_blocks[pos_arr.x][pos_arr.y]){
+                this.arr_blocks[pos_arr.x][pos_arr.y] = type_block
+            }
         }
-
         // this.logArr()
     },
 
@@ -843,6 +910,7 @@ cc.Class({
     actGameOver:function(){
         
         var children = this.block_parent.children
+
         for (let i = children.length-1; i >= 0; i--) {
             
             var act_1 = cc.blink(1.5,4)
@@ -850,36 +918,57 @@ cc.Class({
             var act_3 = cc.callFunc(function(){
                 var pos_block = children[i].getPosition()
                 var blockType = children[i].getComponent('block').blockType
-                for (let i = 0; i < 3; i++) {
+                //for (let i = 0; i < 3; i++) {
                     this.createXing(pos_block,blockType)
-                }
+                //}
                 children[i].active = false
             },this)
 
             var end = cc.sequence(act_1,act_2,act_3)
             children[i].runAction(end)
-            
         }
 
         var f_time_big = 0.5 + 0.03*(children.length-1)
 
-        if (this.node_success.active) {
-            this.numLevel++
-            this.userData.num_level_save = this.numLevel
-            this.scheduleOnce(function(){
-                this.userData.num_score_fh = this.numScore_curr
-                this.saveUserData()
-                this.actStart()
-            },f_time_big+1)
-        }else{
-            this.scheduleOnce(function(){
-                this.userData.num_level_save = 1
-                this.userData.num_score_save = 0
-                this.saveUserData()
-                this.layerFaild.active = true
-                cc.find("Canvas/layerGame/Tixian/btn_zanTing").active = false
-            },f_time_big+1)
-        }
+        this.scheduleOnce(()=>{
+            this.game_game.canClickStar=false
+                //console.log('游戏结束，准备弹出一个红包');
+                cc.game.emit("finishLevel");
+                DataDefine.curCrossedLevelNumber++;
+                cc.sys.localStorage.setItem("curCrossedLevel",JSON.stringify(DataDefine.curCrossedLevelNumber));
+                for (let i = 0; i < this.gm.TASKCONFIG; i++) {
+                    this.gm.TASKCONFIG[i].crossLevelNum=DataDefine.curCrossedLevelNumber;
+                }
+
+                let taskConfigJsonStr = JSON.stringify(this.gm.TASKCONFIG);
+                cc.sys.localStorage.setItem("taskConfig",taskConfigJsonStr);
+
+
+                this.redPack.active=true;
+                
+                this.redPack.children[2].scale=0;
+                cc.tween(this.redPack.children[2])
+                    .to(0.35,{scale:1},{easing:'elasticOut'})
+                    .start()
+        },f_time_big+1.3);
+
+        // if (this.node_success.active) {
+        //     this.numLevel++
+        //     this.userData.num_level_save = this.numLevel
+        //     this.scheduleOnce(function(){
+        //         this.userData.num_score_fh = this.numScore_curr
+        //         this.saveUserData()
+        //         this.actStart()
+        //     },f_time_big+1)
+        // }else{
+        //     this.scheduleOnce(function(){
+        //         this.userData.num_level_save = 1
+        //         this.userData.num_score_save = 0
+        //         this.saveUserData()
+        //         this.layerFaild.active = true
+        //         cc.find("Canvas/layerGame/Tixian/btn_zanTing").active = false
+        //     },f_time_big+1)
+        // }
         
     },
 
@@ -979,25 +1068,9 @@ cc.Class({
                 this.gameType = 2
                 this.userData.arr_blocks_save = []
                 this.saveUserData()
-                console.log('游戏结束，准备弹出一个红包');
-                cc.game.emit("finishLevel");
-                DataDefine.curCrossedLevelNumber++;
-                cc.sys.localStorage.setItem("curCrossedLevel",JSON.stringify(DataDefine.curCrossedLevelNumber));
-                for (let i = 0; i < this.gm.TASKCONFIG; i++) {
-                    this.gm.TASKCONFIG[i].crossLevelNum=DataDefine.curCrossedLevelNumber;
-                }
-
-                let taskConfigJsonStr = JSON.stringify(this.gm.TASKCONFIG);
-                cc.sys.localStorage.setItem("taskConfig",taskConfigJsonStr);
-
-
-                this.redPack.active=true;
-                this.redPack.children[2].scale=0;
-                cc.tween(this.redPack.children[2])
-                    .to(0.35,{scale:1},{easing:'elasticOut'})
-                    .start()
+                this.actGameOver();
             }else{
-                console.log('没结束');
+                //console.log('没结束');
             }
         }, f_time_big+0.02);
 
@@ -1041,9 +1114,12 @@ cc.Class({
         for (let i = 0; i < children.length; i++) {
             var js_block = children[i].getComponent('block')
             if (js_block.is_tiShi) {
-                var act_1 = cc.scaleTo(0.4,0.8)
-                var act_2 = cc.scaleTo(0.4,1)
-                var act_3 = cc.sequence(act_1,act_2)
+                var act_1 = cc.scaleTo(0.2,0.9)
+                var act_2 = cc.scaleTo(0.1,1)
+                var act_21 = cc.scaleTo(0.2,0.8)
+                var act_22 = cc.scaleTo(0.1,1)
+                var pause = cc.delayTime(0.4)
+                var act_3 = cc.sequence(act_1,act_2,act_21,act_22,pause)
                 var end = cc.repeatForever(act_3)
                 children[i].runAction(end)
             }
@@ -1099,7 +1175,7 @@ cc.Class({
             this.userData.num_score_save = 0
             this.saveUserData()
             this.actStart()
-       }else if (str == 'btn_close_zanTing') {
+       }else if (str == '60ose_zanTing') {
             this.layerZanTing.active = false
        }else if (str == 'btn_shuaXin') {//刷新
             if (this.gameType != 1) {
@@ -1152,7 +1228,7 @@ cc.Class({
                 this.tx_biShua.stopAllActions()
                 var num_random = Math.floor(Math.random()*children.length)
                 var pos_random = children[num_random].getPosition()
-                console.log('笔刷位置：'+pos_random);
+                //console.log('笔刷位置：'+pos_random);
                 this.tx_biShua.x = pos_random.x + 15
                 this.tx_biShua.y = pos_random.y + 45
                 
@@ -1189,9 +1265,9 @@ cc.Class({
              this.shuaXinBGMBtn()
          }else if(str=='task'){
             this.layer_Task.active=true;
-            this.layer_Task.children[2].scale=0;
-            cc.tween(this.layer_Task.children[2])
-                .to(0.2,{scale:0.8},{easing:'backOut'}).start()
+            this.layer_Task.children[1].scale=0;
+            cc.tween(this.layer_Task.children[1])
+                .to(0.2,{scale:0.92},{easing:'backOut'}).start()
          }
          else if(str=='tixian'){
             this.layer_Tixian.active=true;
@@ -1207,6 +1283,12 @@ cc.Class({
                     this.layer_Tixian.active = false
                 })
                 .start()
+        }else if(str=="btn_close_zhuanpan"){
+            this.layer_Zhuanpan.active=false;
+        }else if(str=="zhuanpan"){
+            this.layer_Zhuanpan.active=true;
+        }else if(str=="btn_close_zanTing"){
+            this.layerZanTing.active=false;
         }
     },
 

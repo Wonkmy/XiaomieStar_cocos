@@ -1,0 +1,38 @@
+{
+  "ver": "2.3.7",
+  "uuid": "aa3f9bd6-72da-45b2-a451-daaffedde1bd",
+  "importer": "texture",
+  "type": "sprite",
+  "wrapMode": "clamp",
+  "filterMode": "bilinear",
+  "premultiplyAlpha": false,
+  "genMipmaps": false,
+  "packable": true,
+  "width": 87,
+  "height": 28,
+  "platformSettings": {},
+  "subMetas": {
+    "闯关任务未完成按钮": {
+      "ver": "1.0.6",
+      "uuid": "3c025aa9-8926-499f-814c-f31544e1eb8f",
+      "importer": "sprite-frame",
+      "rawTextureUuid": "aa3f9bd6-72da-45b2-a451-daaffedde1bd",
+      "trimType": "auto",
+      "trimThreshold": 1,
+      "rotated": false,
+      "offsetX": 0,
+      "offsetY": 0,
+      "trimX": 0,
+      "trimY": 0,
+      "width": 87,
+      "height": 28,
+      "rawWidth": 87,
+      "rawHeight": 28,
+      "borderTop": 0,
+      "borderBottom": 0,
+      "borderLeft": 0,
+      "borderRight": 0,
+      "subMetas": {}
+    }
+  }
+}

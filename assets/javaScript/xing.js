@@ -9,16 +9,18 @@ cc.Class({
     onLoad () {},
 
     init:function(blockType){
-        if (blockType == 0) {//蓝色
-            this.node.color = new cc.Color(68,191,255)
+        if (blockType == 0) {//蓝色endColor
+            this.node.children[0].getComponent(cc.ParticleSystem).startColor = new cc.Color(0,139,255);
+            this.node.children[0].getComponent(cc.ParticleSystem).endColor = new cc.Color(0,139,255)
         }else if (blockType == 1) {//绿色
-            this.node.color = new cc.Color(102,202,28)
+            this.node.children[0].getComponent(cc.ParticleSystem).startColor = new cc.Color(0,255,0)
+            this.node.children[0].getComponent(cc.ParticleSystem).endColor = new cc.Color(0,255,0)
         }else if (blockType == 2) {//粉色
-            this.node.color = new cc.Color(193,60,255)
+            this.node.children[0].getComponent(cc.ParticleSystem).startColor = new cc.Color(193,60,255)
         }else if (blockType == 3) {//红色
-            this.node.color = new cc.Color(226,69,109)
+            this.node.children[0].getComponent(cc.ParticleSystem).startColor = new cc.Color(255,0,0)
         }else if (blockType == 4) {//黄色
-            this.node.color = new cc.Color(255,184,12)
+            this.node.children[0].getComponent(cc.ParticleSystem).startColor = new cc.Color(255,184,12)
         }
 
         this.numRandom = Math.random()
@@ -30,10 +32,10 @@ cc.Class({
     },
 
     update (dt) {
-        if (this.numRandom > 0.5) {//向右移动
-            this.node.x = this.node.x + this.numSuDu
-        }else{//向左移动
-            this.node.x = this.node.x - this.numSuDu
-        }
+        // if (this.numRandom > 0.5) {//向右移动
+        //     this.node.x = this.node.x + this.numSuDu
+        // }else{//向左移动
+        //     this.node.x = this.node.x - this.numSuDu
+        // }
     },
 });
